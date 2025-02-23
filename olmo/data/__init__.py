@@ -1,12 +1,13 @@
 import importlib
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast, Union
 
 from torch.utils.data import DataLoader, DistributedSampler
 
 from ..aliases import PathOrStr
 from ..config import DataConfig, TrainConfig
+from ..kas_config import KASTrainConfig, KASDataConfig
 from ..exceptions import OLMoConfigurationError
 from ..torch_util import barrier, get_global_rank, get_world_size
 from .collator import CustomDatasetDataCollator, DataCollator
@@ -20,7 +21,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def build_memmap_dataset(
-    train_config: TrainConfig, data_config: DataConfig, include_instance_metadata: bool = True
+    train_config: Union[TrainConfig, KASTrainConfig], data_config: Union[DataConfig, KASDataConfig], include_instance_metadata: bool = True
 ) -> MemMapDataset:
     paths: List[str]
     metadata: List[Dict[str, Any]] = []
@@ -53,7 +54,7 @@ def build_memmap_dataset(
     )
 
 
-def build_collator(train_config: TrainConfig) -> DataCollator:
+def build_collator(train_config: Union[TrainConfig, KASTrainConfig]) -> DataCollator:
     """Returns a collator for the train dataloader. Either returns the default
     collator or a custom collator specified in the train config.
 
@@ -90,8 +91,8 @@ def build_collator(train_config: TrainConfig) -> DataCollator:
 
 
 def build_eval_dataloader(
-    train_config: TrainConfig,
-    data_config: DataConfig,
+    train_config: Union[TrainConfig, KASTrainConfig],
+    data_config: Union[DataConfig, KASDataConfig],
     batch_size: int,
     shuffle: bool = True,
 ) -> DataLoader:
@@ -125,7 +126,7 @@ def build_eval_dataloader(
 
 
 def build_train_dataloader(
-    train_config: TrainConfig,
+    train_config: Union[TrainConfig, KASTrainConfig],
     *,
     world_size: Optional[int] = None,
     rank: Optional[int] = None,

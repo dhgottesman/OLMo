@@ -10,6 +10,7 @@ from olmo_data import get_data_path, is_data_file
 
 from .aliases import PathOrStr
 from .config import ModelConfig, TokenizerConfig, TrainConfig, TruncationDirection
+from .kas_config import KASTrainConfig
 from .exceptions import OLMoConfigurationError
 
 __all__ = ["Tokenizer"]
@@ -55,7 +56,7 @@ class Tokenizer:
         return self.decode([self.pad_token_id], skip_special_tokens=False)
 
     @classmethod
-    def from_train_config(cls, config: TrainConfig) -> Tokenizer:
+    def from_train_config(cls, config: Union[TrainConfig, KASTrainConfig]) -> Tokenizer:
         tokenizer_identifier = config.tokenizer.identifier
         if Path(tokenizer_identifier).is_file():
             tokenizer = cls.from_file(

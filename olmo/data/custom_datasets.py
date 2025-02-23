@@ -1,10 +1,11 @@
 import importlib
 import logging
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 from torch.utils.data import Dataset
 
 from ..config import TrainConfig
+from ..kas_config import KASTrainConfig
 from ..exceptions import OLMoConfigurationError
 
 __all__ = ["build_custom_dataset"]
@@ -12,7 +13,7 @@ __all__ = ["build_custom_dataset"]
 LOGGER = logging.getLogger(__name__)
 
 
-def build_custom_dataset(train_config: TrainConfig) -> Dataset:
+def build_custom_dataset(train_config: Union[TrainConfig, KASTrainConfig]) -> Dataset:
     """Returns an instance custom dataset class from the specified custom module and class name in the train config.
     Assumes that the returned class implements the Pytorch Dataset interface. Responsibility
     for ensuring that the class implements the interface is left to the user.

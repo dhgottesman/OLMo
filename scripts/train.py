@@ -6,7 +6,7 @@ import os
 import sys
 from datetime import timedelta
 from pathlib import Path
-from typing import Optional, TextIO
+from typing import Optional, TextIO, Union
 
 import torch
 import torch.distributed as dist
@@ -23,6 +23,9 @@ from olmo.config import (
     DistributedStrategy,
     TrainConfig,
 )
+
+from olmo.kas_config import KASTrainConfig
+
 from olmo.data import build_train_dataloader
 from olmo.eval import build_evaluators
 from olmo.exceptions import OLMoCliError, OLMoConfigurationError
@@ -51,7 +54,7 @@ from olmo.util import (
 log = logging.getLogger("train")
 
 
-def main(cfg: TrainConfig) -> None:
+def main(cfg: Union[TrainConfig, KASTrainConfig]) -> None:
     # Ensure run name set.
     if cfg.run_name is None:
         raise OLMoConfigurationError("--run_name is required")
@@ -381,6 +384,16 @@ def main(cfg: TrainConfig) -> None:
 
 if __name__ == "__main__":
     try:
+        yaml_path, args_list = sys.argv[1], sys.argv[2:]
+    except IndexError:
+        raise OLMoCliError(f"Usage: {sys.argv[0]} [CONFIG_PATH] [OPTIONS]")
+
+    try:
+        cfg = KASTrainConfig.load(yaml_path, [clean_opt(s) for s in args_list])
+    except OLMoConfigurationError:
+        cfg = TrainConfig.load(yaml_path, [clean_opt(s) for s in args_list])
+
+    try:
         mp.set_start_method("spawn", force=True)
     except RuntimeError as e:
         print(f"failed to set multiprocessing start method: {e}")
@@ -394,9 +407,15 @@ if __name__ == "__main__":
         torch.cuda.set_device(
             device_as_string
         )  # Set this early to prevent GPU 0 from picking up a bunch of tensors it shouldn't have.
-        dist.init_process_group(
-            backend="nccl", timeout=timedelta(minutes=30), device_id=torch.device(device_as_string)
-        )
+
+        if isinstance(cfg, KASTrainConfig) and cfg.debug:
+            torch.distributed.init_process_group(backend='nccl', init_method='env://', world_size=1, rank=0, timeout=timedelta(minutes=30), device_id=torch.device(device_as_string))
+        else:
+            dist.init_process_group(
+                backend="nccl", timeout=timedelta(minutes=30), device_id=torch.device(device_as_string)
+            )
+
+
     elif torch.backends.mps.is_available():
         if not os.getenv("RANK"):
             os.environ["RANK"] = "0"
@@ -418,12 +437,6 @@ if __name__ == "__main__":
 
     add_cached_path_clients()
 
-    try:
-        yaml_path, args_list = sys.argv[1], sys.argv[2:]
-    except IndexError:
-        raise OLMoCliError(f"Usage: {sys.argv[0]} [CONFIG_PATH] [OPTIONS]")
-
-    cfg = TrainConfig.load(yaml_path, [clean_opt(s) for s in args_list])
     if torch.device("mps"):
         log.info("Device is MPS. Updating config...")
         cfg.model.init_device = "mps"

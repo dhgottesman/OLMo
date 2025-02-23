@@ -13,6 +13,7 @@ from torch.optim.optimizer import Optimizer as OptimizerBase
 
 from . import LayerNormBase
 from .config import OptimizerType, SchedulerConfig, SchedulerType, TrainConfig
+from .kas_config import KASTrainConfig
 from .torch_util import get_default_device, is_distributed
 
 __all__ = [
@@ -939,7 +940,7 @@ def fix_optim_state_dict(optimizer: Optimizer, state_dict: Dict[str, Any]) -> Di
     return state_dict
 
 
-def build_optimizer(cfg: TrainConfig, model: nn.Module) -> Optimizer:
+def build_optimizer(cfg: Union[TrainConfig, KASTrainConfig], model: nn.Module) -> Optimizer:
     param_groups = get_param_groups(cfg, model)
     log.info(f"Constructing optimizer with {len(param_groups)} param groups")
     if cfg.optimizer.name == OptimizerType.lionw:
@@ -965,7 +966,7 @@ def build_optimizer(cfg: TrainConfig, model: nn.Module) -> Optimizer:
         raise NotImplementedError
 
 
-def build_scheduler(cfg: TrainConfig, sched_cfg: Optional[SchedulerConfig] = None) -> Scheduler:
+def build_scheduler(cfg: Union[TrainConfig, KASTrainConfig], sched_cfg: Optional[SchedulerConfig] = None) -> Scheduler:
     sched_cfg = sched_cfg if sched_cfg is not None else cfg.scheduler
     if sched_cfg.name == SchedulerType.cosine_with_warmup:
         return CosWithWarmup(

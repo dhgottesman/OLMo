@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from torchmetrics import MeanMetric, Metric
 
 from ..config import EvaluatorType
+from ..kas_config import KASEvaluatorType
 from .downstream import ICLMetric
 
 __all__ = ["Evaluator"]
@@ -14,7 +15,7 @@ __all__ = ["Evaluator"]
 @dataclass
 class Evaluator:
     label: str
-    type: EvaluatorType
+    type: Union[EvaluatorType, KASEvaluatorType]
     eval_loader: DataLoader
     eval_metric: Union[Metric, Dict[str, Metric]]
     subset_num_batches: Optional[int] = None

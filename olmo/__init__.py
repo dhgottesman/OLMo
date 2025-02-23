@@ -1,4 +1,5 @@
 from .config import *
+from .kas_config import *
 from .model import *
 from .tokenizer import *
 

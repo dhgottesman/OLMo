@@ -40,6 +40,7 @@ from .config import (
     SpeedMonitorConfig,
     TrainConfig,
 )
+from.kas_config import KASTrainConfig
 from .data import IterableDataset
 from .eval import Evaluator
 from .exceptions import OLMoConfigurationError
@@ -207,7 +208,7 @@ except ImportError:
 
 @dataclass
 class Trainer:
-    cfg: TrainConfig
+    cfg: Union[TrainConfig, KASTrainConfig]
     model: OLMo
     dist_model: Union[DDP, FSDP, SingleAccelerator]
     optim: Optimizer

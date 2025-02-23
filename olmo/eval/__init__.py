@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader, DistributedSampler
 from torchmetrics import MeanMetric, Metric
 
 from ..config import EvaluatorConfig, EvaluatorType, TrainConfig
+from ..kas_config import KASTrainConfig, KASEvaluatorType, KASEvaluatorConfig
 from ..exceptions import OLMoConfigurationError
 from ..tokenizer import Tokenizer
 from ..torch_util import get_global_rank, get_world_size
@@ -22,8 +23,8 @@ __all__ = [
 
 
 def build_downstream_evaluator(
-    train_config: TrainConfig,
-    eval_cfg: EvaluatorConfig,
+    train_config: Union[TrainConfig, KASTrainConfig],
+    eval_cfg: Union[EvaluatorConfig, KASEvaluatorConfig],
     tokenizer: Tokenizer,
     device: torch.device,
     is_unit_test=False,
@@ -69,7 +70,7 @@ def build_downstream_evaluator(
 
 
 def build_evaluator(
-    train_config: TrainConfig, eval_config: EvaluatorConfig, tokenizer: Tokenizer, device: torch.device
+    train_config: Union[TrainConfig, KASTrainConfig], eval_config: EvaluatorConfig, tokenizer: Tokenizer, device: torch.device
 ) -> Evaluator:
     from ..data import build_eval_dataloader
 
@@ -106,7 +107,7 @@ def build_evaluator(
         raise ValueError(f"Unexpected evaluator type '{eval_config.type}'")
 
 
-def build_evaluators(cfg: TrainConfig, device: torch.device) -> List[Evaluator]:
+def build_evaluators(cfg: Union[TrainConfig, KASTrainConfig], device: torch.device) -> List[Evaluator]:
     evaluators = []
     tokenizer = Tokenizer.from_train_config(cfg)
     for eval_cfg in cfg.evaluators:
